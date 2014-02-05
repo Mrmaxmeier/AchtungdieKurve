@@ -70,6 +70,8 @@ def isExit(e):
 	return (e.type == QUIT) or (e.type == KEYDOWN and e.key == K_ESCAPE)
 def isStart(e):
 	return e.type == KEYDOWN and e.key == K_RETURN
+def isForceStart(e):
+	return e.type == KEYDOWN and e.key == K_1
 def isReset(e):
 	return e.type == KEYDOWN and e.key == K_BACKSPACE
 
@@ -188,6 +190,9 @@ def main():
 			if isExit(e): exit(0)
 			if isStart(e):
 				sock.send(repr({"ready": True}))
+				sock.flush()
+			if isForceStart(e):
+				sock.send(repr({"forcestart": True}))
 				sock.flush()
 			if isReset(e):
 				sock.send(repr({"reset": True}))
