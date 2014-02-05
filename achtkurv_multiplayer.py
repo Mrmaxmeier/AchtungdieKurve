@@ -47,7 +47,7 @@ class Player:
 	def drawText(self, text, screen):
 		for i, line in enumerate(ext.split("\n")):
 			textimg = self.font.render(line, 0, self.col)
-			screen.blit(textimg, textimg.get_rect(topleft=self.rect.topleft.move(0, i*100))
+			screen.blit(textimg, textimg.get_rect(topleft=self.rect.topleft.move(0, i*100)))
 	
 	def update(self, screen, keys, dt):
 		if keys[self.keya]: self.angle += self.ANGLE*dt
