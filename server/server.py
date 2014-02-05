@@ -16,6 +16,7 @@ class Player:
 		self.isReady = False
 		self.isDead = False
 		self.ip = ip
+		self.forceStart = False
 	
 	def update(self, dictionary = {}):
 		dict = dictionary
@@ -29,6 +30,8 @@ class Player:
 			self.server.needsReset = dict["reset"]
 		if "dead" in dict:
 			self.isDead = dict["dead"]
+		if "forcestart" in dict:
+			self.forceStart = dict["forcestart"]
 		if not self.position in self.lastPositions:
 			self.lastPositions.append(self.position)
 	
@@ -192,6 +195,10 @@ while running:
 				started = False
 		if server.playerList == []:
 			started = False
+		for p in server.playerList:
+			if p.forceStart:
+				print("Forcestarting")
+				started = True
 		if started:
 			print("The Game will begin NOW")
 			for p in server.playerList:
