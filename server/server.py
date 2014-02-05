@@ -158,6 +158,10 @@ while running:
 				print("Neues Spiel, gewinner:",winningplayer.id)
 				winningplayer.socket.send("victory")
 				winningplayer.socket.flush()
+				scr = genScoreboard()
+				for p in server.playerList:
+					p.socket.send("text "+scr)
+					p.socket.flush()
 		
 		
 		
@@ -180,11 +184,6 @@ while running:
 				player.socket.send("clear")
 				player.socket.flush()
 		
-		
-		scr = genScoreboard()
-		for p in server.playerList:
-			p.socket.send("text "+scr)
-			p.socket.flush()
 		
 	else:
 		started = True
