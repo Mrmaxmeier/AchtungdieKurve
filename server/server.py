@@ -122,7 +122,7 @@ class Server(threading.Thread):
 		self.start()
 	
 
-port = 1337
+port = 1339
 server = Server("0.0.0.0", port)
 
 def callback():

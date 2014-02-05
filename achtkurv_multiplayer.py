@@ -124,7 +124,7 @@ def askPlayerSock(screen, rect, clock):
 				file.write(ip)
 				file.close()
 				sock = socket()
-				sock.connect((ip, 1337))
+				sock.connect((ip, 1339))
 				supersock = SuperSocket(sock)
 				player = Player(rect, k1, k2, 0, supersock)
 				return (player, supersock)
