@@ -11,6 +11,8 @@ exit = os._exit
 fullscreen = 0
 size = (1280, 720)
 
+PORT = 45739
+
 COLS = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1)]
 
 class Player:
@@ -126,7 +128,7 @@ def askPlayerSock(screen, rect, clock):
 				file.write(ip)
 				file.close()
 				sock = socket()
-				sock.connect((ip, 1339))
+				sock.connect((ip, PORT))
 				supersock = SuperSocket(sock)
 				player = Player(rect, k1, k2, 0, supersock)
 				return (player, supersock)

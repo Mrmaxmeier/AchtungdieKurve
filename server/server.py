@@ -4,6 +4,9 @@ import threading
 import time
 
 
+PORT = 45739
+
+
 class Player:
 	def __init__(self, name, id, socket, server, ip):
 		self.name = name
@@ -125,8 +128,8 @@ class Server(threading.Thread):
 		self.start()
 	
 
-port = 1339
-server = Server("0.0.0.0", port)
+
+server = Server("0.0.0.0", PORT)
 
 def callback():
 	pass
@@ -197,6 +200,7 @@ while running:
 			started = False
 		for p in server.playerList:
 			if p.forceStart:
+				p.forceStart = False
 				print("Forcestarting")
 				started = True
 		if started:
