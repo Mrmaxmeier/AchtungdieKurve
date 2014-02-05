@@ -35,7 +35,7 @@ class Player:
 			self.isDead = dict["dead"]
 		if "forcestart" in dict:
 			self.forceStart = dict["forcestart"]
-		if not self.position in self.lastPositions:
+		if "pos" in dict and not self.position in self.lastPositions:
 			self.lastPositions.append(self.position)
 	
 	def getownPlayerInfo(self):
@@ -45,7 +45,7 @@ class Player:
 	
 	def handle(self, send):
 		def callback(msg):
-			print("%d received: %s" % (id(send), msg))
+			print("%d received: %s" % (self.id, msg))
 			if not msg:
 				return
 			try:
@@ -56,15 +56,11 @@ class Player:
 			self.update(dict)
 			
 		return callback
-	
-	
-
 
 
 
 class Server(threading.Thread):
 	def __init__(self, host, port):
-
 		threading.Thread.__init__(self, daemon=True)
 		
 		self.serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -79,6 +75,8 @@ class Server(threading.Thread):
 		self.playerList = []
 		self.gameRunning = False
 		self.needsReset = False
+		self.started = False
+		self.starting = False
 	
 	
 	def serve(self):
@@ -94,7 +92,7 @@ class Server(threading.Thread):
 				callback = playerobj.handle(socket.send)
 				socket.listen(callback)
 				self.scoreboard[playerobj.ip] = 0
-				if started:
+				if self.started:
 					socket.send("start")
 					socket.flush()
 				print("Finished creating %s" % str(addr))
@@ -102,56 +100,31 @@ class Server(threading.Thread):
 			self.serversock.close()
 	
 	
-	def resolveList(self, str):
-		#if str.startswith("[") and str.endswith("]"):
-		iii = None
-		if str[0] == "[" and str[-1] == "]":
-			str = str[1:-1]
-			iii = []
-			for ii in b.split(","):
-				self.resolveList(iii)
-				iii.append(ii)
-			b = iii
-		if iii:
-			return iii
-		else:
-			return str
-	
-	
-	
-	
 	def run(self):
 		self.serve()
 
-	def listen(self, callback):
-		self.callback = callback
-		self.start()
-	
-
 
 server = Server("0.0.0.0", PORT)
-
-def callback():
-	pass
-
-server.listen(callback)
-
-running = True
-started = False
+server.start()
 
 
 def genScoreboard():
-	msg = []
-	for (ip, score) in sorted(server.scoreboard, key=server.scoreboard.get):
-		msg.append(str(ip)+":"+str(score))
-	msg = "\n".join(msg)
-	print(msg)
-	return msg
+	return "\n".join(["%s: %d" % (ip, score)
+		for (ip, score) in sorted(server.scoreboard, key=server.scoreboard.get)])
 
 
 
-while running:
-	if started:
+while 1:
+	for p in server.playerList:
+		if not p.socket.isAlive:
+			print("killing dead sock!")
+			server.playerList.remove(p)
+	if server.started:
+		if server.starting:
+			print("................starting................")
+			for p in server.playerList:
+				p.lastPositions = []
+			server.starting = False
 		if len(server.playerList) > 1:
 			d = 0
 			winningplayer = None
@@ -170,9 +143,8 @@ while running:
 					p.socket.flush()
 		
 		
-		
+		print("broadcasting positions...")
 		for p in server.playerList:
-			p.update()
 			for op in server.playerList:
 				info = p.getownPlayerInfo()
 				if op is not p:
@@ -181,30 +153,30 @@ while running:
 		time.sleep(0.1)
 		
 		if server.needsReset:
-			started = False
-			server.gamerunning = False
+			server.started = False
 			server.needsReset = False
 			for player in server.playerList:
 				player.isReady = False
 				player.isDead = False
+				player.lastPositions = []
 				player.socket.send("clear")
 				player.socket.flush()
-		
-		
 	else:
-		started = True
+		start = True
 		for p in server.playerList:
 			if not p.isReady:
-				started = False
+				start = False
 		if server.playerList == []:
-			started = False
+			start = False
 		for p in server.playerList:
 			if p.forceStart:
 				p.forceStart = False
 				print("Forcestarting")
-				started = True
-		if started:
+				start = True
+		if start:
 			print("The Game will begin NOW")
+			server.started = True
+			server.starting = True
 			for p in server.playerList:
 				p.socket.send("start")
 				p.socket.flush()
