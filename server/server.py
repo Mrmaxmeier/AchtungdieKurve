@@ -14,6 +14,7 @@ class Player:
 		self.position = [0,0]
 		self.rotation = 0
 		self.lastPositions = []
+		self.bucket = []
 		self.socket = socket
 		self.server = server
 		self.isReady = False
@@ -38,9 +39,18 @@ class Player:
 		if "pos" in dict and not self.position in self.lastPositions:
 			self.lastPositions.append(self.position)
 	
-	def getownPlayerInfo(self):
-		dict = {"playerName":self.name, "playerID":self.id, "rot":self.rotation, "lastPositions": self.lastPositions}
-		return repr(dict)
+	def delPoss(self):
+		self.movePoss()
+		self.bucket = []
+
+	def movePoss(self):
+		self.bucket += self.lastPositions
+		self.lastPositions = []
+
+	def getOwnPlayerInfo(self, bucket=False):
+		if bucket:	poss = self.bucket
+		else:		poss = self.lastPositions
+		return repr({"playerName":self.name, "playerID":self.id, "rot":self.rotation, "lastPositions": poss})
 	
 	
 	def handle(self, send):
@@ -92,6 +102,9 @@ class Server(threading.Thread):
 				socket.listen(callback)
 				self.scoreboard[playerobj.ip] = 0
 				if self.started:
+					for op in self.playerList:
+						if op is not playerobj:
+							socket.send(op.getOwnPlayerInfo(True))
 					socket.send("start")
 					socket.flush()
 				print("Finished creating %s" % ip)
@@ -123,7 +136,7 @@ while 1:
 		if server.starting:
 			print("................starting................")
 			for p in server.playerList:
-				p.lastPositions = []
+				p.delPoss()
 			server.starting = False
 		if len(server.playerList) > 1 and not server.won:
 			d = 0
@@ -148,10 +161,10 @@ while 1:
 		print("broadcasting positions...")
 		for p in server.playerList:
 			for op in server.playerList:
-				info = p.getownPlayerInfo()
+				info = p.getOwnPlayerInfo()
 				if op is not p:
 					op.socket.send(info)
-			p.lastPositions = []
+			p.movePoss()
 		time.sleep(0.1)
 		
 		if server.needsReset:
@@ -161,7 +174,7 @@ while 1:
 			for player in server.playerList:
 				player.isReady = False
 				player.isDead = False
-				player.lastPositions = []
+				player.delPoss()
 				player.socket.send("clear")
 				player.socket.flush()
 	else:
