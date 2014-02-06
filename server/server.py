@@ -54,9 +54,7 @@ class Player:
 				dict = {}
 				print("FEHELER BAIM EVALLEN: ", msg)
 			self.update(dict)
-			
 		return callback
-
 
 
 class Server(threading.Thread):
@@ -77,15 +75,16 @@ class Server(threading.Thread):
 		self.needsReset = False
 		self.started = False
 		self.starting = False
+		self.won = False
 	
 	
 	def serve(self):
 		try:
 			while self.isAlive:
-				(sock, addr) = self.serversock.accept()
+				(sock, (ip, port)) = self.serversock.accept()
 				print("SOMEBODEY JOIINEAAD")
 				socket = SuperSocket(sock)
-				playerobj = Player("Deinemudda", self.idtobegiven, socket, self, addr)
+				playerobj = Player("Deinemudda", self.idtobegiven, socket, self, ip)
 				self.id2player[playerobj.id] = playerobj
 				self.idtobegiven += 1
 				self.playerList.append(playerobj)
@@ -95,7 +94,7 @@ class Server(threading.Thread):
 				if self.started:
 					socket.send("start")
 					socket.flush()
-				print("Finished creating %s" % str(addr))
+				print("Finished creating %s" % ip)
 		finally:
 			self.serversock.close()
 	
@@ -109,8 +108,9 @@ server.start()
 
 
 def genScoreboard():
-	return "\n".join(["%s: %d" % (ip, score)
-		for (ip, score) in sorted(server.scoreboard, key=server.scoreboard.get)])
+	def snd(x): return -x[1]
+	return "\n".join(["%d.: %s mit %d" % (i+1, ip.split(".")[-1], score)
+		for i, (ip, score) in enumerate(sorted(server.scoreboard.items(), key=snd))])
 
 
 
@@ -125,7 +125,7 @@ while 1:
 			for p in server.playerList:
 				p.lastPositions = []
 			server.starting = False
-		if len(server.playerList) > 1:
+		if len(server.playerList) > 1 and not server.won:
 			d = 0
 			winningplayer = None
 			for p in server.playerList:
@@ -135,6 +135,8 @@ while 1:
 					winningplayer = p
 			if d + 1 == len(server.playerList):
 				print("Neues Spiel, gewinner:",winningplayer.id)
+				server.won = True
+				server.scoreboard[winningplayer.ip] += 1
 				winningplayer.socket.send("victory")
 				winningplayer.socket.flush()
 				scr = genScoreboard()
@@ -155,6 +157,7 @@ while 1:
 		if server.needsReset:
 			server.started = False
 			server.needsReset = False
+			server.won = False
 			for player in server.playerList:
 				player.isReady = False
 				player.isDead = False
